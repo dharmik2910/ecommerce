@@ -60,12 +60,22 @@ Railway will automatically redeploy the backend. Now your Vercel Next.js app and
 
 ---
 
-## Verification & Seeding
+## How to Seed Your Production Database
 
-If you need to seed initial product data to your Railway production database:
-You can run the seed command locally pointing `DATABASE_URL` to your Railway Postgres database:
+To populate your Railway production database with initial Categories, Products, and Admin credentials (`admin@furniturestore.com` / `Admin@123`):
+
+### Option 1: Run Locally Connected to Railway DB (Easiest)
+Get your Postgres **Public Connection String** from Railway (under PostgreSQL Service -> Connect / Variables -> `DATABASE_PUBLIC_URL`):
 
 ```bash
 cd backend
-DATABASE_URL="your-railway-database-url" npm run seed
+DATABASE_URL="postgresql://postgres:password@host:port/railway" npm run seed
+```
+
+### Option 2: Run via Railway CLI
+If you have the [Railway CLI](https://docs.railway.app/reference/cli) installed:
+
+```bash
+cd backend
+railway run npm run seed:prod
 ```

@@ -12,16 +12,34 @@ import { Address } from './entities/address.entity';
 
 dotenv.config();
 
-const dataSource = new DataSource({
-  type: 'postgres',
-  host: process.env.DB_HOST || 'localhost',
-  port: parseInt(process.env.DB_PORT || '5432', 10),
-  username: process.env.DB_USERNAME || 'postgres',
-  password: process.env.DB_PASSWORD || 'postgres',
-  database: process.env.DB_NAME || 'furniture_store',
-  entities: [User, Category, Product, Cart, CartItem, Order, OrderItem, Address],
-  synchronize: true,
-});
+const databaseUrl =
+  process.env.DATABASE_URL ||
+  process.env.POSTGRES_URL ||
+  process.env.DATABASE_PUBLIC_URL;
+
+const sslEnabled = process.env.DB_SSL === 'true' || !!databaseUrl;
+
+const dataSource = new DataSource(
+  databaseUrl && databaseUrl.trim() !== ''
+    ? {
+        type: 'postgres',
+        url: databaseUrl,
+        entities: [User, Category, Product, Cart, CartItem, Order, OrderItem, Address],
+        synchronize: true,
+        ssl: sslEnabled ? { rejectUnauthorized: false } : false,
+      }
+    : {
+        type: 'postgres',
+        host: process.env.DB_HOST || process.env.PGHOST || 'localhost',
+        port: parseInt(process.env.DB_PORT || process.env.PGPORT || '5432', 10),
+        username: process.env.DB_USERNAME || process.env.PGUSER || 'postgres',
+        password: process.env.DB_PASSWORD || process.env.PGPASSWORD || 'postgres',
+        database: process.env.DB_NAME || process.env.PGDATABASE || 'furniture_store',
+        entities: [User, Category, Product, Cart, CartItem, Order, OrderItem, Address],
+        synchronize: true,
+        ssl: sslEnabled ? { rejectUnauthorized: false } : false,
+      },
+);
 
 async function seed() {
   await dataSource.initialize();

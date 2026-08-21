@@ -10,7 +10,11 @@ import { OrderItem } from '../entities/order-item.entity';
 import { Address } from '../entities/address.entity';
 
 export const getTypeOrmConfig = (config: ConfigService): TypeOrmModuleOptions => {
-  const databaseUrl = config.get<string>('DATABASE_URL');
+  const databaseUrl =
+    config.get<string>('DATABASE_URL') ||
+    config.get<string>('POSTGRES_URL') ||
+    config.get<string>('DATABASE_PUBLIC_URL');
+
   const isProduction = config.get<string>('NODE_ENV') === 'production';
   const sslEnabled = config.get<string>('DB_SSL') === 'true' || !!databaseUrl;
 
@@ -22,20 +26,32 @@ export const getTypeOrmConfig = (config: ConfigService): TypeOrmModuleOptions =>
     ssl: sslEnabled ? { rejectUnauthorized: false } : false,
   };
 
-  if (databaseUrl) {
+  if (databaseUrl && databaseUrl.trim() !== '') {
     return {
       ...baseConfig,
       url: databaseUrl,
     };
   }
 
+  const host = config.get<string>('DB_HOST') || config.get<string>('PGHOST') || 'localhost';
+  const port = parseInt(config.get<string>('DB_PORT') || config.get<string>('PGPORT') || '5432', 10);
+  const username = config.get<string>('DB_USERNAME') || config.get<string>('PGUSER') || 'postgres';
+  const password = config.get<string>('DB_PASSWORD') || config.get<string>('PGPASSWORD') || 'postgres';
+  const database = config.get<string>('DB_NAME') || config.get<string>('PGDATABASE') || 'furniture_store';
+
+  if (isProduction && host === 'localhost') {
+    console.warn(
+      '⚠️ WARNING: DATABASE_URL environment variable is not set in Railway! NestJS is falling back to localhost.',
+    );
+  }
+
   return {
     ...baseConfig,
-    host: config.get<string>('DB_HOST', 'localhost'),
-    port: parseInt(config.get<string>('DB_PORT', '5432'), 10),
-    username: config.get<string>('DB_USERNAME', 'postgres'),
-    password: config.get<string>('DB_PASSWORD', 'postgres'),
-    database: config.get<string>('DB_NAME', 'furniture_store'),
+    host,
+    port,
+    username,
+    password,
+    database,
   };
 };
 
